@@ -11,8 +11,7 @@ $gameConfig = [
 @endphp
 <x-app-layout>
 <div class="max-w-lg mx-auto px-4 py-6 flex flex-col items-center gap-4"
-     x-data="wordlyGame(@js($gameConfig))"
-     x-init="init()">
+     x-data="wordlyGame(@js($gameConfig))">
 
     {{-- Date + solver count --}}
     <div class="text-center text-slate-400 text-sm">
