@@ -84,6 +84,7 @@ class GameController extends Controller
             'status'    => $status,
             'attempts'  => count($guesses),
             'shareText' => $finished ? $game->shareText() : null,
+            'word'      => $status === 'lost' ? $dailyWord->word : null,
         ]);
     }
 

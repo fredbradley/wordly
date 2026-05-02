@@ -185,10 +185,7 @@ function wordlyGame(config) {
 
                 if (data.status !== 'playing') {
                     this.shareText = data.shareText || '';
-                    if (data.status === 'lost') {
-                        const match = this.shareText.match(/The word was (\w+)/i);
-                        this.todayWord = match ? match[1] : '';
-                    }
+                    this.todayWord = data.word || '';
                     setTimeout(() => { this.showModal = true; }, 600);
                 }
             } catch {
