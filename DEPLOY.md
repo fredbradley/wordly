@@ -44,7 +44,12 @@ php artisan key:generate
 ```bash
 touch database/database.sqlite
 php artisan migrate --force
+
+# Seed the word bank (374 built-in words)
 php artisan db:seed --class=DailyWordSeeder --force
+
+# Assign the next 60 days of daily words from the bank
+php artisan wordly:assign-daily-word --days=60
 ```
 
 ### 6. Permissions
@@ -61,11 +66,47 @@ php artisan view:cache
 php artisan icons:cache 2>/dev/null || true
 ```
 
-### 8. Cron (for scheduled word refresh)
-Add to crontab (`crontab -e`):
+### 8. Cron — Laravel scheduler
+The Laravel scheduler must run every minute. It drives two things:
+- **01:00 daily** — `wordly:assign-daily-word` picks a random unused word from
+  the `words` table and inserts tomorrow's entry into `daily_words`.
+- Any future scheduled tasks you add to `routes/console.php`.
+
+Add a single crontab entry for the `www-data` user (or whichever user runs PHP):
+
+```bash
+crontab -e -u www-data
+```
+
+Add this line:
 ```
 * * * * * cd /var/www/wordly && php artisan schedule:run >> /dev/null 2>&1
 ```
+
+**Verify it's working** — after a minute, check the scheduler ran:
+```bash
+php artisan schedule:list        # shows registered commands and their next run time
+tail -f storage/logs/laravel.log # watch for any scheduler errors
+```
+
+**Managing the word bank via Artisan** (requires SSH access):
+```bash
+# Add a new word to the pool
+php artisan wordly:word add tiger
+
+# Remove a word (soft-deleted — historical game records are preserved)
+php artisan wordly:word remove tiger
+
+# Re-adding a soft-deleted word restores it
+php artisan wordly:word add tiger
+
+# Manually top up the schedule (e.g. after adding a batch of new words)
+php artisan wordly:assign-daily-word --days=30
+```
+
+> **Note:** If the word bank runs low and the cron cannot assign a word for
+> tomorrow, an error is logged. Add more words with `wordly:word add` and
+> run `wordly:assign-daily-word` manually to backfill.
 
 ### 9. Queue worker (optional, for future email features)
 ```bash
