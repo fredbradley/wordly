@@ -8,5 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Refresh word coverage quarterly so we always have words ahead
-Schedule::command('wordly:refresh-words')->quarterly();
+// Assign tomorrow's word every night at 01:00
+Schedule::command('wordly:assign-daily-word')->dailyAt('01:00');

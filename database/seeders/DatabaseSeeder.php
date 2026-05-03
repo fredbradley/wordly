@@ -15,6 +15,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Populate the word bank
         $this->call(DailyWordSeeder::class);
+
+        // Assign the next 30 days from today
+        $this->command->call('wordly:assign-daily-word', ['--days' => 30]);
     }
 }
