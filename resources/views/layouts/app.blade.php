@@ -43,7 +43,6 @@
         {{-- Live activity toasts --}}
         <div
             x-data="activityFeed()"
-            x-init="init()"
             class="fixed bottom-4 right-4 z-50 flex flex-col-reverse gap-2 items-end pointer-events-none"
             style="max-width: 280px">
             <template x-for="toast in toasts" :key="toast.id">
@@ -93,7 +92,7 @@
                         setTimeout(() => {
                             this.toasts = this.toasts.filter(t => t.id !== id);
                         }, 300);
-                    }, 4500);
+                    }, 10000);
                 },
             };
         }
