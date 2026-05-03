@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Word;
+use App\Services\DictionaryService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -29,6 +30,12 @@ class WordCommand extends Command
         return $action === 'add' ? $this->addWord($word) : $this->removeWord($word);
     }
 
+    private function checkDictionary(string $word): bool
+    {
+        $this->line("  Checking dictionary for '<comment>{$word}</comment>'...", null, 'v');
+        return app(DictionaryService::class)->isRealWord($word);
+    }
+
     private function addWord(string $word): int
     {
         $existing = Word::withTrashed()->where('word', $word)->first();
@@ -36,6 +43,15 @@ class WordCommand extends Command
         if ($existing && ! $existing->trashed()) {
             $this->warn("'{$word}' is already in the word bank.");
             return self::SUCCESS;
+        }
+
+        // Dictionary check (skipped if restoring a previously approved word)
+        if (! $existing) {
+            $this->line("  Checking '<comment>{$word}</comment>' against the dictionary...");
+            if (! $this->checkDictionary($word)) {
+                $this->error("'{$word}' was not found in the dictionary and cannot be added.");
+                return self::FAILURE;
+            }
         }
 
         if ($existing && $existing->trashed()) {
