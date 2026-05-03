@@ -39,5 +39,64 @@
                 &copy; {{ date('Y') }} Wordly. A new word every day.
             </footer>
         </div>
+
+        {{-- Live activity toasts --}}
+        <div
+            x-data="activityFeed()"
+            x-init="init()"
+            class="fixed bottom-4 right-4 z-50 flex flex-col-reverse gap-2 items-end pointer-events-none"
+            style="max-width: 280px">
+            <template x-for="toast in toasts" :key="toast.id">
+                <div
+                    x-show="toast.visible"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+                    class="flex items-center gap-2.5 bg-slate-800 border border-slate-700 shadow-xl rounded-xl px-3.5 py-2.5 text-sm text-white pointer-events-auto">
+                    <span class="text-xl leading-none" x-text="toast.emoji"></span>
+                    <span class="leading-snug" x-text="toast.message"></span>
+                </div>
+            </template>
+        </div>
+
+        <script>
+        function activityFeed() {
+            return {
+                toasts: [],
+                nextId: 0,
+
+                init() {
+                    if (typeof window.Echo === 'undefined') return;
+
+                    window.Echo.channel('game-activity')
+                        .listen('.activity', (e) => {
+                            this.add(e.message, e.emoji);
+                        });
+                },
+
+                add(message, emoji) {
+                    const id = this.nextId++;
+                    this.toasts.unshift({ id, message, emoji, visible: true });
+
+                    // Keep max 4 visible at once
+                    if (this.toasts.length > 4) {
+                        this.toasts.splice(4);
+                    }
+
+                    // Auto-dismiss after 4.5s
+                    setTimeout(() => {
+                        const toast = this.toasts.find(t => t.id === id);
+                        if (toast) toast.visible = false;
+                        setTimeout(() => {
+                            this.toasts = this.toasts.filter(t => t.id !== id);
+                        }, 300);
+                    }, 4500);
+                },
+            };
+        }
+        </script>
     </body>
 </html>

@@ -101,6 +101,26 @@ Then run `certbot --nginx -d yourdomain.com` for SSL.
 
 ---
 
+## Reverb WebSocket server (real-time activity feed)
+
+Reverb must run as a persistent background process. Use Supervisor:
+
+```ini
+[program:reverb]
+command=php /var/www/wordly/artisan reverb:start --host=0.0.0.0 --port=8080
+directory=/var/www/wordly
+autostart=true
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/var/log/reverb.log
+```
+
+Set `REVERB_HOST` to your domain in `.env` and `VITE_REVERB_HOST` before building assets.
+For SSL, set `REVERB_SCHEME=https` and proxy port 8080 through Nginx with TLS.
+
+---
+
 ## Post-deploy updates
 ```bash
 git pull

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\GameActivityEvent;
 use App\Models\DailyWord;
 use App\Models\Game;
 use App\Services\WordleService;
@@ -79,6 +80,8 @@ class GameController extends Controller
             $this->updateUserStats($user, $game, $won, count($guesses), $dailyWord->date);
         }
 
+        $this->broadcastActivity($user->name, $result, count($guesses), $status);
+
         return response()->json([
             'result'    => $result,
             'status'    => $status,
@@ -86,6 +89,55 @@ class GameController extends Controller
             'shareText' => $finished ? $game->shareText() : null,
             'word'      => $status === 'lost' ? $dailyWord->word : null,
         ]);
+    }
+
+    private function broadcastActivity(string $name, array $result, int $attempt, string $status): void
+    {
+        $firstName = explode(' ', $name)[0];
+
+        if ($status === 'won') {
+            GameActivityEvent::dispatch(
+                "{$firstName} cracked it in {$attempt}/6!",
+                '🎉',
+                'won'
+            );
+            return;
+        }
+
+        if ($status === 'lost') {
+            GameActivityEvent::dispatch(
+                "{$firstName} didn't get it today",
+                '😔',
+                'lost'
+            );
+            return;
+        }
+
+        if ($attempt === 1) {
+            GameActivityEvent::dispatch(
+                "{$firstName} just started playing",
+                '🟩',
+                'started'
+            );
+            return;
+        }
+
+        $correct = count(array_filter($result, fn($r) => $r === 'correct'));
+        $present = count(array_filter($result, fn($r) => $r === 'present'));
+
+        if ($correct >= 3) {
+            GameActivityEvent::dispatch(
+                "{$firstName} has {$correct}/5 letters in the right place!",
+                '🔥',
+                'progress'
+            );
+        } elseif ($correct + $present >= 3) {
+            GameActivityEvent::dispatch(
+                "{$firstName} has found " . ($correct + $present) . " of the letters",
+                '💡',
+                'progress'
+            );
+        }
     }
 
     private function updateUserStats($user, Game $game, bool $won, int $attempts, $date): void
